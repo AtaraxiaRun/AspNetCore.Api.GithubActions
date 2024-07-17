@@ -52,4 +52,4 @@ jobs:
           fi
           ##进入目标目录启动服务
           cd /root/test/deploy/out
-          nohup dotnet ***.dll --urls http://0.0.0.0:5001 > app.log 2>&1 &
+          nohup dotnet ***.dll --urls http://0.0.0.0:5000 > app.log 2>&1 &
