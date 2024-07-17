@@ -1,0 +1,6 @@
+@AspNetCore.Api.GithubActions_HostAddress = http://localhost:5038
+
+GET {{AspNetCore.Api.GithubActions_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
