@@ -1,0 +1,55 @@
+name: ASP.NET Core Deployment
+
+on:
+  push:
+    branches:
+      - master  # 你可以根据需要更改分支名称
+  workflow_dispatch:  # 添加这一行，以便手动触发工作流
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # 使用 Ubuntu 环境
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '8.0.x'  # 你可以根据需要更改 .NET Core 版本
+
+    - name: Build and Publish
+      run: |
+        dotnet publish -c Release -r linux-x64 -o out
+
+    - name: Copy Files to Server
+      uses: appleboy/scp-action@master
+      with:
+        host:  ${{secrets.HOST}}
+        username: ${{secrets.USERNAME}}
+        password: ${{secrets.PASSWORD}}
+        port: 22
+        source: "out/"
+        target: "/root/test/deploy"
+
+    - name: SSH into Server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{secrets.HOST}}
+        username: ${{secrets.USERNAME}}
+        password: ${{secrets.PASSWORD}}
+        port: 22
+        script: |
+          ## 找到所有dotnet进程并杀死所有进程（后续用DockerFile部署就没有这个问题）
+          dotnet_processes=$(ps aux | grep 'dotnet' | grep -v 'grep' | awk '{print \$2}')
+          if [ -n "$dotnet_processes" ]; then
+            echo "Found dotnet processes: $dotnet_processes"
+            kill -9 $dotnet_processes
+            echo "Dotnet processes killed."
+          else
+            echo "No dotnet processes found."
+          fi
+          ##进入目标目录启动服务
+          cd /root/test/deploy/out
+          nohup dotnet ***.dll > app.log 2>&1 &
